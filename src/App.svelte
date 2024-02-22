@@ -1,9 +1,7 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import generateTexture from "./lib/generateTexture";
-  import debounce from "./lib/utils/debounce";
   import saveFile from "./lib/utils/saveFile";
-
-  const debouncedGenerateTexture = debounce(generateTexture, 200);
 
   let canvas: HTMLCanvasElement | undefined;
   let gridSize = 20;
@@ -11,12 +9,20 @@
   let lineWidth = 4;
   let width = 1920;
   let height = 1080;
-  let seed = Math.random().toString();
-
   $: console.log(gridSize);
 
-  function regenerate() {
-    seed = Math.random().toString();
+  function generate() {
+    if (!canvas) return;
+    const seed = Math.random().toString();
+    generateTexture({
+      canvas,
+      gridSize,
+      dotScale: dotScale / 10,
+      lineWidth: lineWidth / 10,
+      width,
+      height,
+      seed,
+    });
   }
 
   function saveCanvasAsImage() {
@@ -28,19 +34,7 @@
     }, "image/png");
   }
 
-  $: {
-    if (canvas) {
-      debouncedGenerateTexture({
-        canvas,
-        gridSize,
-        dotScale: dotScale / 10,
-        lineWidth: lineWidth / 10,
-        width,
-        height,
-        seed,
-      });
-    }
-  }
+  onMount(() => generate());
 </script>
 
 <div>
@@ -76,7 +70,7 @@
     ><p>height</p>
     <input bind:value={height} type="number" /></label
   >
-  <button type="button" on:click={regenerate}>regenerate</button>
+  <button type="button" on:click={generate}>generate</button>
   <button type="button" on:click={saveCanvasAsImage}>save texture</button>
 
   <p class="credits">
