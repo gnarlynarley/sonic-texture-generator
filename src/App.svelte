@@ -1,43 +1,57 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import generateTexture from "./lib/generateTexture";
-  import saveFile from "./lib/utils/saveFile";
+  import { saveAs } from "file-saver";
+  import type { FormEventHandler } from "svelte/elements";
 
-  let canvas: HTMLCanvasElement | undefined;
   let gridSize = 20;
   let dotScale = 5;
   let lineWidth = 4;
-  let width = 1920;
-  let height = 1080;
-  $: console.log(gridSize);
+  let width = 500;
+  let height = 500;
+  let posterizationRange = 2;
+  let textureImageSource: string | null = null;
+  generate();
 
   function generate() {
-    if (!canvas) return;
     const seed = Math.random().toString();
-    generateTexture({
-      canvas,
+    const next = generateTexture({
       gridSize,
       dotScale: dotScale / 10,
       lineWidth: lineWidth / 10,
       width,
       height,
       seed,
+      posterizationRange,
     });
+    textureImageSource = next;
+
+    return next;
+  }
+
+  function handleSubmid(ev: Event) {
+    ev.preventDefault();
+    generate();
   }
 
   function saveCanvasAsImage() {
-    if (!canvas) return;
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], "texture.png");
-      saveFile(file);
-    }, "image/png");
+    if (textureImageSource) {
+      saveAs(textureImageSource, "texture.png");
+    }
   }
 
   onMount(() => generate());
 </script>
 
-<div>
+<form on:submit={handleSubmid}>
+  <label
+    ><p>width</p>
+    <input bind:value={width} type="number" /></label
+  >
+  <label
+    ><p>height</p>
+    <input bind:value={height} type="number" /></label
+  >
   <label>
     <p>grid size</p>
     <input bind:value={gridSize} step={1} type="range" min={5} max={80} />
@@ -63,14 +77,16 @@
     /></label
   >
   <label
-    ><p>width</p>
-    <input bind:value={width} type="number" /></label
+    ><p>posterization</p>
+    <input
+      bind:value={posterizationRange}
+      step={1}
+      type="range"
+      min={1}
+      max={5}
+    /></label
   >
-  <label
-    ><p>height</p>
-    <input bind:value={height} type="number" /></label
-  >
-  <button type="button" on:click={generate}>generate</button>
+  <button type="submit">generate</button>
   <button type="button" on:click={saveCanvasAsImage}>save texture</button>
 
   <p class="credits">
@@ -90,22 +106,20 @@
       here
     </a> his action for Clip Studio Paint.
   </p>
-</div>
+</form>
 
-<canvas bind:this={canvas} />
+{#if textureImageSource}
+  <img src={textureImageSource} alt="The cool sonic texture" />
+{/if}
 
 <style>
-  canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  img {
+    width: auto;
   }
 
-  div {
+  form {
     position: fixed;
+    width: auto;
     top: 1em;
     left: 1em;
     z-index: 9999;

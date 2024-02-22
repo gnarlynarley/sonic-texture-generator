@@ -2,20 +2,20 @@ import assert from "./utils/assert";
 import seedRand from "./utils/rand";
 
 export default function generateTexture({
-  canvas,
   gridSize,
   dotScale,
   lineWidth,
   width,
   height,
+  posterizationRange,
   seed,
 }: {
-  canvas: HTMLCanvasElement;
   gridSize: number;
   dotScale: number;
   lineWidth: number;
   width: number;
   height: number;
+  posterizationRange: number;
   seed: string;
 }) {
   const rand = seedRand(seed);
@@ -32,6 +32,10 @@ export default function generateTexture({
       context,
       width,
       height,
+      destroy() {
+        canvas.width = 0;
+        canvas.height = 0;
+      },
     };
   }
 
@@ -82,6 +86,7 @@ export default function generateTexture({
     assert(pattern);
     context.fillStyle = pattern;
     context.fillRect(0, 0, width, height);
+    halftone.destroy();
   }
 
   function renderLines(
@@ -105,6 +110,8 @@ export default function generateTexture({
         context.drawImage(chosenLine.canvas, x, y);
       }
     }
+
+    lines.forEach((l) => l.destroy());
   }
 
   function posterization(
@@ -131,11 +138,6 @@ export default function generateTexture({
 
     context.putImageData(imageData, 0, 0);
   }
-  const context = canvas.getContext("2d");
-  assert(context);
-
-  canvas.width = width;
-  canvas.height = height;
 
   const texture = createCanvas(width, height);
   texture.context.fillStyle = "white";
@@ -148,7 +150,10 @@ export default function generateTexture({
   );
 
   renderHalftone(texture.canvas, texture.context, gridSize, dotScale);
-  posterization(texture.canvas, texture.context, 5);
+  posterization(texture.canvas, texture.context, posterizationRange);
 
-  context.drawImage(texture.canvas, 0, 0, canvas.width, canvas.height);
+  const url = texture.canvas.toDataURL();
+
+  texture.destroy();
+  return url;
 }
