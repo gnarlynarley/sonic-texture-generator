@@ -78,6 +78,24 @@
   >
   <button type="button" on:click={regenerate}>regenerate</button>
   <button type="button" on:click={saveCanvasAsImage}>save texture</button>
+
+  <p class="credits">
+    Made by <a
+      href="https://twitter.com/GnarlyNarley"
+      target="_blank"
+      rel="noopener noreferrer">Narley</a
+    >
+    with help from
+    <a href="https://twitter.com/EroCopi" rel="noopener noreferrer"
+      >thehumancopier</a
+    >, get
+    <a
+      href="https://thehumancopier.gumroad.com/l/crvee"
+      rel="noopener noreferrer"
+    >
+      here
+    </a> his action for Clip Studio Paint.
+  </p>
 </div>
 
 <canvas bind:this={canvas} />
@@ -103,5 +121,10 @@
     padding: 0.5em;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(2px);
+  }
+
+  .credits {
+    max-width: 15em;
+    font-size: 0.7em;
   }
 </style>
