@@ -6,7 +6,7 @@
   const debouncedGenerateTexture = debounce(generateTexture, 200);
 
   let canvas: HTMLCanvasElement | undefined;
-  let gridSize = 50;
+  let gridSize = 20;
   let dotScale = 5;
   let lineWidth = 4;
   let width = 1920;
@@ -46,7 +46,7 @@
 <div>
   <label>
     <p>grid size</p>
-    <input bind:value={gridSize} step={1} type="range" min={5} max={200} />
+    <input bind:value={gridSize} step={1} type="range" min={5} max={80} />
   </label>
   <label
     ><p>dot</p>
