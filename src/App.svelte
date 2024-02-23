@@ -4,9 +4,9 @@
   import { saveAs } from "file-saver";
   import type { FormEventHandler } from "svelte/elements";
 
-  let gridSize = 20;
-  let dotScale = 5;
-  let lineWidth = 4;
+  let gridSize = 30;
+  let dotScale = 0.5;
+  let lineScale = 0.5;
   let width = 500;
   let height = 500;
   let posterizationRange = 2;
@@ -17,8 +17,8 @@
     const seed = Math.random().toString();
     const next = generateTexture({
       gridSize,
-      dotScale: dotScale / 10,
-      lineWidth: lineWidth / 10,
+      dotScale,
+      lineScale,
       width,
       height,
       seed,
@@ -62,18 +62,18 @@
       bind:value={dotScale}
       step={0.1}
       type="range"
-      min={1}
-      max={10}
+      min={0}
+      max={1}
     /></label
   >
   <label
     ><p>line</p>
     <input
-      bind:value={lineWidth}
+      bind:value={lineScale}
       step={0.1}
       type="range"
       min={0}
-      max={5}
+      max={1}
     /></label
   >
   <label
@@ -86,6 +86,7 @@
       max={5}
     /></label
   >
+
   <button type="submit">generate</button>
   <button type="button" on:click={saveCanvasAsImage}>save texture</button>
 
@@ -128,7 +129,10 @@
     gap: 0.5em;
     padding: 0.5em;
     background: rgba(0, 0, 0, 0.8);
+    border-radius: 0.3em;
+    border: 2px solid color-mix(in srgb, white, transparent 90%);
     backdrop-filter: blur(2px);
+    box-shadow: 0 0.1em 0.3em color-mix(in srgb, black, transparent 50%);
   }
 
   .credits {

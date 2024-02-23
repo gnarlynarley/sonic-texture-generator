@@ -1,10 +1,13 @@
 import assert from "./utils/assert";
 import seedRand from "./utils/rand";
+import noise from "./utils/texture/noise";
+import createCanvas from "./utils/createCanvas";
+import posterization from "./utils/texture/posterization";
 
 export default function generateTexture({
   gridSize,
   dotScale,
-  lineWidth,
+  lineScale,
   width,
   height,
   posterizationRange,
@@ -12,32 +15,13 @@ export default function generateTexture({
 }: {
   gridSize: number;
   dotScale: number;
-  lineWidth: number;
+  lineScale: number;
   width: number;
   height: number;
   posterizationRange: number;
   seed: string;
 }) {
   const rand = seedRand(seed);
-  function createCanvas(width: number, height: number) {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-
-    if (!context) throw new Error("Could not create context.");
-
-    return {
-      canvas,
-      context,
-      width,
-      height,
-      destroy() {
-        canvas.width = 0;
-        canvas.height = 0;
-      },
-    };
-  }
 
   function renderCircle(
     context: CanvasRenderingContext2D,
@@ -71,10 +55,8 @@ export default function generateTexture({
   function renderHalftone(
     { width, height }: HTMLCanvasElement,
     context: CanvasRenderingContext2D,
-    gridSize: number,
-    scale: number,
+    dotSize: number,
   ) {
-    const dotSize = (gridSize * scale) / 2;
     const halftone = createCanvas(gridSize, gridSize);
     renderCircle(halftone.context, 0, 0, dotSize);
     renderCircle(halftone.context, gridSize, 0, dotSize);
@@ -92,21 +74,29 @@ export default function generateTexture({
   function renderLines(
     { width, height }: HTMLCanvasElement,
     context: CanvasRenderingContext2D,
-    gridSize: number,
-    stroke: number,
+    lineSize: number,
   ) {
     const line1 = createCanvas(gridSize, gridSize);
-    renderLine(line1.context, 0, 0, gridSize, gridSize, stroke);
-    renderLine(line1.context, 0, gridSize, gridSize, 0, stroke);
+    renderLine(line1.context, 0, 0, gridSize, gridSize, lineSize);
+    line1.context.save();
+    line1.context.translate(gridSize * 0.5, gridSize * -0.5);
+    renderLine(line1.context, 0, 0, gridSize, gridSize, lineSize);
+    line1.context.restore();
+    line1.context.translate(gridSize * -0.5, gridSize * 0.5);
+    renderLine(line1.context, 0, 0, gridSize, gridSize, lineSize);
     const line2 = createCanvas(gridSize, gridSize);
-    renderLine(line2.context, 0, 0, gridSize, gridSize, stroke);
+    line2.context.translate(gridSize, 0);
+    line2.context.scale(-1, 1);
+    line2.context.drawImage(line1.canvas, 0, 0);
     const line3 = createCanvas(gridSize, gridSize);
-    renderLine(line3.context, 0, gridSize, gridSize, 0, stroke);
+    line3.context.drawImage(line1.canvas, 0, 0);
+    line3.context.drawImage(line2.canvas, 0, 0);
     const lines = [line1, line2, line3];
+    const length = lines.length;
 
     for (let x = 0; x < width; x += gridSize) {
       for (let y = 0; y < height; y += gridSize) {
-        const chosenLine = lines[Math.floor(rand() * 3)];
+        const chosenLine = lines[Math.floor(rand() * length)];
         context.drawImage(chosenLine.canvas, x, y);
       }
     }
@@ -114,42 +104,14 @@ export default function generateTexture({
     lines.forEach((l) => l.destroy());
   }
 
-  function posterization(
-    canvas: HTMLCanvasElement,
-    context: CanvasRenderingContext2D,
-    value: number,
-  ) {
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-
-    for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i + 0];
-      const g = pixels[i + 1];
-      const b = pixels[i + 2];
-      const a = pixels[i + 3];
-      const average = (r + g + b) / 3;
-      const pixelValue = (Math.round((average / 255) * value) * 255) / value;
-
-      pixels[i + 0] = pixelValue;
-      pixels[i + 1] = pixelValue;
-      pixels[i + 2] = pixelValue;
-      pixels[i + 3] = Math.round(a / 255) * 255;
-    }
-
-    context.putImageData(imageData, 0, 0);
-  }
-
   const texture = createCanvas(width, height);
   texture.context.fillStyle = "white";
   texture.context.fillRect(0, 0, width, height);
-  renderLines(
-    texture.canvas,
-    texture.context,
-    gridSize,
-    (lineWidth * gridSize) / 2,
-  );
+  const dotSize = gridSize * dotScale * 0.33;
+  const lineSize = dotSize * lineScale * 2;
 
-  renderHalftone(texture.canvas, texture.context, gridSize, dotScale);
+  renderLines(texture.canvas, texture.context, lineSize);
+  renderHalftone(texture.canvas, texture.context, dotSize);
   posterization(texture.canvas, texture.context, posterizationRange);
 
   const url = texture.canvas.toDataURL();
