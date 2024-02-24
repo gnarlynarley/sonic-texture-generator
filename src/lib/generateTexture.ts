@@ -1,8 +1,9 @@
 import assert from "./utils/assert";
 import seedRand from "./utils/rand";
-import noise from "./utils/texture/noise";
 import createCanvas from "./utils/createCanvas";
 import posterization from "./utils/texture/posterization";
+import renderCircle from "./utils/texture/renderCircle";
+import renderLine from "./utils/texture/renderLine";
 
 export default function generateTexture({
   gridSize,
@@ -22,35 +23,6 @@ export default function generateTexture({
   seed: string;
 }) {
   const rand = seedRand(seed);
-
-  function renderCircle(
-    context: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    r: number,
-  ) {
-    context.fillStyle = "black";
-    context.beginPath();
-    context.arc(x, y, r, 0, Math.PI * 2);
-    context.closePath();
-    context.fill();
-  }
-
-  function renderLine(
-    context: CanvasRenderingContext2D,
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    strokeWidth: number,
-  ) {
-    context.lineWidth = strokeWidth;
-    context.strokeStyle = "black";
-    context.beginPath();
-    context.moveTo(x1, y1);
-    context.lineTo(x2, y2);
-    context.stroke();
-  }
 
   function renderHalftone(
     { width, height }: HTMLCanvasElement,
@@ -105,8 +77,10 @@ export default function generateTexture({
   }
 
   const texture = createCanvas(width, height);
+
   texture.context.fillStyle = "white";
   texture.context.fillRect(0, 0, width, height);
+
   const dotSize = gridSize * dotScale * 0.33;
   const lineSize = dotSize * lineScale * 2;
 
@@ -114,8 +88,5 @@ export default function generateTexture({
   renderHalftone(texture.canvas, texture.context, dotSize);
   posterization(texture.canvas, texture.context, posterizationRange);
 
-  const url = texture.canvas.toDataURL();
-
-  texture.destroy();
-  return url;
+  return texture.canvas;
 }

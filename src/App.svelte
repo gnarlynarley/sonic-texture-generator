@@ -2,20 +2,65 @@
   import { onMount } from "svelte";
   import generateTexture from "./lib/generateTexture";
   import { saveAs } from "file-saver";
-  import type { FormEventHandler } from "svelte/elements";
+  import createImage from "./lib/utils/createImage";
+  import renderLayers, {
+    blendingModes,
+    type BlendingModeType,
+  } from "./lib/utils/renderLayers";
+  import debounce from "./lib/utils/debounce";
 
-  let gridSize = 30;
-  let dotScale = 0.5;
+  let files: FileList | null = null;
+  $: file = files?.[0] ?? null;
+  let gridSize = 10 ?? 30;
+  let dotScale = 0.7;
   let lineScale = 0.5;
   let width = 500;
   let height = 500;
   let posterizationRange = 2;
-  let textureImageSource: string | null = null;
-  generate();
+  let textureCanvas: HTMLCanvasElement;
+  let imageOpacity = 20;
+  let imageBlendingMode: BlendingModeType = "overlay";
 
-  function generate() {
+  let image: HTMLImageElement | null = null;
+  let imageSrc: string | null = null;
+  $: {
+    if (imageSrc) {
+      URL.revokeObjectURL(imageSrc);
+    }
+    if (file) {
+      imageSrc = URL.createObjectURL(file);
+    } else {
+      imageSrc = null;
+      image = null;
+    }
+    if (imageSrc) {
+      createImage(imageSrc).then((value) => {
+        image = value;
+        width = value.width;
+        height = value.height;
+        generate();
+      });
+    }
+  }
+
+  $: canvasImageSrc = renderLayers(
+    width,
+    height,
+    image
+      ? [
+          {
+            image: textureCanvas,
+            opacity: imageOpacity / 100,
+            blendingMode: imageBlendingMode,
+          },
+          { image, opacity: 1, blendingMode: "normal" },
+        ]
+      : [{ image: textureCanvas, opacity: 1, blendingMode: "normal" }],
+  );
+
+  async function generate() {
     const seed = Math.random().toString();
-    const next = generateTexture({
+    textureCanvas = generateTexture({
       gridSize,
       dotScale,
       lineScale,
@@ -24,30 +69,36 @@
       seed,
       posterizationRange,
     });
-    textureImageSource = next;
-
-    return next;
   }
 
-  function handleSubmid(ev: Event) {
+  function handleSubmit(ev: Event) {
     ev.preventDefault();
     generate();
   }
 
   function saveCanvasAsImage() {
-    if (textureImageSource) {
-      saveAs(textureImageSource, "texture.png");
+    if (canvasImageSrc) {
+      saveAs(canvasImageSrc, "texture.png");
     }
   }
+
+  function clearImage() {
+    files = null;
+  }
+
+  const handleImageOpacityInput = debounce((e: any) => {
+    imageOpacity = e.target.value;
+  });
 
   onMount(() => generate());
 </script>
 
-<form on:submit={handleSubmid}>
+<form on:submit={handleSubmit}>
   <label
     ><p>width</p>
     <input bind:value={width} type="number" /></label
   >
+
   <label
     ><p>height</p>
     <input bind:value={height} type="number" /></label
@@ -90,6 +141,35 @@
   <button type="submit">generate</button>
   <button type="button" on:click={saveCanvasAsImage}>save texture</button>
 
+  <hr />
+
+  <input bind:files type="file" accept="image/*" />
+
+  {#if image}
+    <button type="button" on:click={clearImage}>clear image</button>
+    <label>
+      <p>Blending mode</p>
+      <select bind:value={imageBlendingMode}>
+        {#each blendingModes as blendingMode}
+          <option value={blendingMode}>{blendingMode}</option>
+        {/each}
+      </select>
+    </label>
+    <label>
+      <p>Opacity</p>
+      <input
+        on:input={handleImageOpacityInput}
+        value={imageOpacity}
+        step={1}
+        type="number"
+        min={0}
+        max={100}
+      />
+    </label>
+  {/if}
+
+  <hr />
+
   <p class="credits">
     Made by <a
       href="https://twitter.com/GnarlyNarley"
@@ -109,8 +189,8 @@
   </p>
 </form>
 
-{#if textureImageSource}
-  <img src={textureImageSource} alt="The cool sonic texture" />
+{#if canvasImageSrc}
+  <img src={canvasImageSrc} alt="The cool sonic texture" />
 {/if}
 
 <style>
