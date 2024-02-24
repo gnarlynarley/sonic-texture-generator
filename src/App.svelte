@@ -8,6 +8,7 @@
     type BlendingModeType,
   } from "./lib/utils/renderLayers";
   import debounce from "./lib/utils/debounce";
+  import Button from "./lib/components/Button.svelte";
 
   let files: FileList | null = null;
   $: file = files?.[0] ?? null;
@@ -93,101 +94,105 @@
   onMount(() => generate());
 </script>
 
-<form on:submit={handleSubmit}>
-  <label
-    ><p>width</p>
-    <input bind:value={width} type="number" /></label
-  >
+<details class="controls" open>
+  <summary>Options</summary>
+  <form on:submit={handleSubmit}>
+    <label
+      ><p>width</p>
+      <input bind:value={width} type="number" /></label
+    >
 
-  <label
-    ><p>height</p>
-    <input bind:value={height} type="number" /></label
-  >
-  <label>
-    <p>grid size</p>
-    <input bind:value={gridSize} step={1} type="range" min={5} max={80} />
-  </label>
-  <label
-    ><p>dot</p>
-    <input
-      bind:value={dotScale}
-      step={0.1}
-      type="range"
-      min={0}
-      max={1}
-    /></label
-  >
-  <label
-    ><p>line</p>
-    <input
-      bind:value={lineScale}
-      step={0.1}
-      type="range"
-      min={0}
-      max={1}
-    /></label
-  >
-  <label
-    ><p>posterization</p>
-    <input
-      bind:value={posterizationRange}
-      step={1}
-      type="range"
-      min={1}
-      max={5}
-    /></label
-  >
-
-  <button type="submit">generate</button>
-  <button type="button" on:click={saveCanvasAsImage}>save texture</button>
-
-  <hr />
-
-  <input bind:files type="file" accept="image/*" />
-
-  {#if image}
-    <button type="button" on:click={clearImage}>clear image</button>
+    <label
+      ><p>height</p>
+      <input bind:value={height} type="number" /></label
+    >
     <label>
-      <p>Blending mode</p>
-      <select bind:value={imageBlendingMode}>
-        {#each blendingModes as blendingMode}
-          <option value={blendingMode}>{blendingMode}</option>
-        {/each}
-      </select>
+      <p>grid size</p>
+      <input bind:value={gridSize} step={1} type="range" min={5} max={80} />
     </label>
-    <label>
-      <p>Opacity</p>
+    <label
+      ><p>dot</p>
       <input
-        on:input={handleImageOpacityInput}
-        value={imageOpacity}
-        step={1}
-        type="number"
+        bind:value={dotScale}
+        step={0.1}
+        type="range"
         min={0}
-        max={100}
-      />
-    </label>
-  {/if}
-
-  <hr />
-
-  <p class="credits">
-    Made by <a
-      href="https://twitter.com/GnarlyNarley"
-      target="_blank"
-      rel="noopener noreferrer">Narley</a
+        max={1}
+      /></label
     >
-    with help from
-    <a href="https://twitter.com/EroCopi" rel="noopener noreferrer"
-      >thehumancopier</a
-    >, get
-    <a
-      href="https://thehumancopier.gumroad.com/l/crvee"
-      rel="noopener noreferrer"
+    <label
+      ><p>line</p>
+      <input
+        bind:value={lineScale}
+        step={0.1}
+        type="range"
+        min={0}
+        max={1}
+      /></label
     >
-      here
-    </a> his action for Clip Studio Paint.
-  </p>
-</form>
+    <label
+      ><p>posterization</p>
+      <input
+        bind:value={posterizationRange}
+        step={1}
+        type="range"
+        min={1}
+        max={5}
+      /></label
+    >
+
+    <Button type="submit" primary>generate</Button>
+
+    <Button type="button" on:click={saveCanvasAsImage}>save texture</Button>
+
+    <hr />
+
+    <input bind:files type="file" accept="image/*" />
+
+    {#if image}
+      <label>
+        <p>Blending mode</p>
+        <select bind:value={imageBlendingMode}>
+          {#each blendingModes as blendingMode}
+            <option value={blendingMode}>{blendingMode}</option>
+          {/each}
+        </select>
+      </label>
+      <label>
+        <p>Opacity</p>
+        <input
+          on:input={handleImageOpacityInput}
+          value={imageOpacity}
+          step={1}
+          type="number"
+          min={0}
+          max={100}
+        />
+      </label>
+      <Button type="button" on:click={clearImage} caution>clear image</Button>
+    {/if}
+
+    <hr />
+
+    <p class="credits">
+      Made by <a
+        href="https://twitter.com/GnarlyNarley"
+        target="_blank"
+        rel="noopener noreferrer">Narley</a
+      >
+      with help from
+      <a href="https://twitter.com/EroCopi" rel="noopener noreferrer"
+        >thehumancopier</a
+      >, get
+      <a
+        href="https://thehumancopier.gumroad.com/l/crvee"
+        rel="noopener noreferrer"
+      >
+        here
+      </a> his action for Clip Studio Paint.
+    </p>
+  </form>
+</details>
 
 {#if canvasImageSrc}
   <img src={canvasImageSrc} alt="The cool sonic texture" />
@@ -198,7 +203,11 @@
     width: auto;
   }
 
-  form {
+  input {
+    width: 100%;
+  }
+
+  .controls {
     position: fixed;
     width: auto;
     top: 1em;
@@ -213,6 +222,12 @@
     border: 2px solid color-mix(in srgb, white, transparent 90%);
     backdrop-filter: blur(2px);
     box-shadow: 0 0.1em 0.3em color-mix(in srgb, black, transparent 50%);
+  }
+
+  .controls form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gutter);
   }
 
   .credits {

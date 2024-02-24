@@ -27,7 +27,6 @@ export default function renderLayers(
   height: number,
   layers: Layer[],
 ) {
-  console.log("render layers");
   const { canvas, context, destroy } = createCanvas(width, height);
 
   for (const layer of layers.toReversed()) {
