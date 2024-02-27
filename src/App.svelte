@@ -9,6 +9,7 @@
   } from "./lib/utils/renderLayers";
   import debounce from "./lib/utils/debounce";
   import Button from "./lib/components/Button.svelte";
+  import DropZone from "./lib/components/DropZone.svelte";
 
   let files: FileList | null = null;
   $: file = files?.[0] ?? null;
@@ -59,6 +60,11 @@
       : [{ image: textureCanvas, opacity: 1, blendingMode: "normal" }],
   );
 
+  function handleFiles(ev: CustomEvent<File[]>) {
+    files = null;
+    file = ev.detail.at(0) ?? null;
+  }
+
   async function generate() {
     const seed = Math.random().toString();
     textureCanvas = generateTexture({
@@ -78,13 +84,13 @@
   }
 
   function saveCanvasAsImage() {
-    if (canvasImageSrc) {
-      saveAs(canvasImageSrc, "texture.png");
-    }
+    const src = textureCanvas.toDataURL("image/png");
+    saveAs(src, "texture.png");
   }
 
   function clearImage() {
     files = null;
+    file = null;
   }
 
   const handleImageOpacityInput = debounce((e: any) => {
@@ -193,6 +199,8 @@
     </p>
   </form>
 </details>
+
+<DropZone on:files={handleFiles} />
 
 {#if canvasImageSrc}
   <img src={canvasImageSrc} alt="The cool sonic texture" />
